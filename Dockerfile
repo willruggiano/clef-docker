@@ -15,13 +15,10 @@ COPY packaging/rules.js /out/app/config/rules.js
 COPY packaging/4byte.json /out/app/config/4byte.json
 COPY packaging/docker/entrypoint.sh /out/entrypoint.sh
 
-#RUN chown -R nobody:nogroup /out
-
 FROM debian:10.2-slim as runtime
 COPY --from=build /out /
 
 EXPOSE 8550
-#USER nobody
 WORKDIR /app
 VOLUME /app/data
 

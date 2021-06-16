@@ -1,9 +1,5 @@
 #!/bin/bash
 
-ACTION="${1:-full}"
-CHAINID="${CLEF_CHAINID:-5}"
-DATA=/app/data
-
 init() {
     parse_json() { echo $1|sed -e 's/[{}]/''/g'|sed -e 's/", "/'\",\"'/g'|sed -e 's/" ,"/'\",\"'/g'|sed -e 's/" , "/'\",\"'/g'|sed -e 's/","/'\"---SEPERATOR---\"'/g'|awk -F=':' -v RS='---SEPERATOR---' "\$1~/\"$2\"/ {print}"|sed -e "s/\"$2\"://"|tr -d "\n\t"|sed -e 's/\\"/"/g'|sed -e 's/\\\\/\\/g'|sed -e 's/^[ \t]*//g'|sed -e 's/^"//' -e 's/"$//' ; }
     if [ ! -f "$DATA"/password ]; then
@@ -43,7 +39,7 @@ run() {
         fi
     done
     ) &
-    clef --stdio-ui --suppress-bootwarn --keystore "$DATA"/keystore --configdir "$DATA" --chainid "$CHAINID" --http --http.addr 0.0.0.0 --http.port 8550 --http.vhosts "*" --rules /app/config/rules.js --nousb --lightkdf --ipcdisable --4bytedb-custom /app/config/4byte.json --pcscdpath "" --auditlog "" --loglevel 3 < /tmp/stdin | tee /tmp/stdout
+    clef --stdio-ui --suppress-bootwarn --keystore "$DATA"/keystore --configdir "$DATA" --chainid "$CHAINID" --rules /app/config/rules.js --nousb --lightkdf --4bytedb-custom /app/config/4byte.json --pcscdpath "" --auditlog "" --loglevel 3 < /tmp/stdin | tee /tmp/stdout
 }
 
 full() {
@@ -52,5 +48,31 @@ full() {
     fi
     run
 }
+
+# Global variables
+ACTION="${CLEF_ACTION:-full}"
+CHAINID="${CLEF_CHAINID:-5}"
+DATA=/app/data
+DRYRUN=0
+
+for a in "$@"; do
+    case "$a" in
+        --run)
+            ACTION="run"; shift ;;
+        --init)
+            ACTION="init"; shift ;;
+        --full)
+            ACTION="full"; shift ;;
+        --chainid)
+            shift; CHAINID="$1"; shift ;;
+        --dryrun)
+            DRYRUN=1; shift ;;
+    esac
+done
+
+if [[ $DRYRUN -eq 1 ]]; then
+    echo "Would run: $ACTION with --chainid $CHAINID"
+    exit 0
+fi
 
 $ACTION
